@@ -1,0 +1,168 @@
+// =============================================================================
+// PRISMA SCHEMA - IMOVEIS MVP
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum TipoImovel {
+  APARTAMENTO
+  CASA
+  TERRENO
+  COMERCIAL
+  COBERTURA
+  STUDIO
+}
+
+enum StatusImovel {
+  DISPONIVEL
+  VENDIDO
+  ALUGADO
+  RESERVADO
+}
+
+enum TipoTransacao {
+  VENDA
+  ALUGUEL
+  VENDA_ALUGUEL
+}
+
+// =============================================================================
+// MODELOS
+// =============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String    @default("ADMIN")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Imovel {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  titulo          String
+  descricao       String        @db.Text
+  preco           Float
+  tipo            TipoImovel
+  tipoTransacao   TipoTransacao @default(VENDA)
+  status          StatusImovel  @default(DISPONIVEL)
+
+  // Localização
+  bairro          String
+  cidade          String
+  estado          String        @default("SP")
+  cep             String?
+  endereco        String?
+  numero          String?
+  complemento     String?
+
+  // Características
+  quartos         Int           @default(0)
+  banheiros       Int           @default(0)
+  vagas           Int           @default(0)
+  metragem        Float
+  metragemTerreno Float?
+  suites          Int           @default(0)
+
+  // Comodidades (JSON array de strings)
+  comodidades     String[]      @default([])
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Integração Notion
+  notionId        String?       @unique
+
+  // Destaque
+  destaque        Boolean       @default(false)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  imagens         ImagemImovel[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([tipo])
+  @@index([bairro])
+  @@index([cidade])
+  @@index([preco])
+  @@map("imoveis")
+}
+
+model ImagemImovel {
+  id        String   @id @default(cuid())
+  imovelId  String
+  url       String
+  alt       String?
+  ordem     Int      @default(0)
+  principal Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  imovel Imovel @relation(fields: [imovelId], references: [id], onDelete: Cascade)
+
+  @@index([imovelId])
+  @@map("imagens_imoveis")
+}
