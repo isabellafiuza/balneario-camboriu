@@ -7,6 +7,8 @@ import { TipoImovel, StatusImovel, TipoTransacao } from '@prisma/client'
 
 const NOTION_API_URL = 'https://api.notion.com/v1'
 const NOTION_VERSION = '2022-06-28'
+// ID correto do banco de dados do Notion
+const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID || 'b83ab1514e4b49e281206d38ea926e05'
 
 // Mapeia valores do Notion para enums do sistema
 function mapearTipo(valor: string): TipoImovel {
@@ -94,14 +96,16 @@ export async function GET(request: NextRequest) {
     }
 
     const apiKey = process.env.NOTION_API_KEY
-    const databaseId = process.env.NOTION_DATABASE_ID
+    const databaseId = NOTION_DATABASE_ID
 
     if (!apiKey || !databaseId) {
       return NextResponse.json(
-        { error: 'Integração com Notion não configurada. Defina NOTION_API_KEY e NOTION_DATABASE_ID.' },
+        { error: 'Integração com Notion não configurada. Defina NOTION_API_KEY no .env.local' },
         { status: 400 }
       )
     }
+
+    console.log(`[Notion API] GET /api/notion - Consultando database: ${databaseId}`)
 
     const response = await fetch(`${NOTION_API_URL}/databases/${databaseId}/query`, {
       method: 'POST',
@@ -115,6 +119,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const erro = await response.json()
+      console.error('[Notion API] Erro ao consultar:', erro)
       return NextResponse.json(
         { error: 'Erro ao consultar Notion', detalhes: erro },
         { status: response.status }
@@ -122,27 +127,32 @@ export async function GET(request: NextRequest) {
     }
 
     const dados = await response.json()
+    console.log(`[Notion API] Sucesso: ${dados.results.length} imóveis encontrados`)
 
     // Mapear resultados para preview
     const imoveis = dados.results.map((pagina: any) => {
       const props = pagina.properties
       return {
         notionId: pagina.id,
-        titulo: extrairValor(props['Título'] || props['Title'] || props['Nome'] || props['Name']),
-        tipo: extrairValor(props['Tipo']),
-        status: extrairValor(props['Status']),
-        preco: extrairValor(props['Preço'] || props['Preco'] || props['Price']),
-        bairro: extrairValor(props['Bairro']),
-        cidade: extrairValor(props['Cidade']),
-        quartos: extrairValor(props['Quartos']),
-        metragem: extrairValor(props['Metragem'] || props['Área'] || props['Area']),
+        // Mapeamento correto dos campos do Notion
+        titulo: extrairValor(props['Codigo'] || props['Título'] || props['Title'] || props['Nome'] || props['Name']) || 'Sem título',
+        tipo: extrairValor(props['Tipo']) || '',
+        status: extrairValor(props['Status']) || 'Disponível',
+        preco: extrairValor(props['Valor'] || props['Preço'] || props['Preco'] || props['Price']) || 0,
+        bairro: extrairValor(props['Bairro']) || '',
+        cidade: extrairValor(props['Cidade']) || '',
+        quartos: extrairValor(props['Dormitórios'] || props['Dormitorios'] || props['Quartos']) || 0,
+        metragem: extrairValor(props['Area Privativa'] || props['Area Total'] || props['Área Privativa'] || props['Área Total'] || props['Metragem'] || props['Área'] || props['Area']) || 0,
       }
     })
 
     return NextResponse.json({ imoveis, total: dados.results.length })
   } catch (error) {
-    console.error('Erro ao consultar Notion:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    console.error('[Notion API] Erro ao consultar Notion:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', detalhes: String(error) },
+      { status: 500 }
+    )
   }
 }
 
@@ -155,14 +165,16 @@ export async function POST(request: NextRequest) {
     }
 
     const apiKey = process.env.NOTION_API_KEY
-    const databaseId = process.env.NOTION_DATABASE_ID
+    const databaseId = NOTION_DATABASE_ID
 
     if (!apiKey || !databaseId) {
       return NextResponse.json(
-        { error: 'Integração com Notion não configurada.' },
+        { error: 'Integração com Notion não configurada. Defina NOTION_API_KEY no .env.local' },
         { status: 400 }
       )
     }
+
+    console.log(`[Notion API] POST /api/notion - Iniciando sincronização`)
 
     const response = await fetch(`${NOTION_API_URL}/databases/${databaseId}/query`, {
       method: 'POST',
@@ -176,6 +188,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const erro = await response.json()
+      console.error('[Notion API] Erro ao consultar:', erro)
       return NextResponse.json(
         { error: 'Erro ao consultar Notion', detalhes: erro },
         { status: response.status }
@@ -183,6 +196,7 @@ export async function POST(request: NextRequest) {
     }
 
     const dados = await response.json()
+    console.log(`[Notion API] Processando ${dados.results.length} imóveis`)
 
     let criados = 0
     let atualizados = 0
@@ -194,31 +208,32 @@ export async function POST(request: NextRequest) {
         const props = pagina.properties
         const notionId = pagina.id
 
-        const titulo = extrairValor(props['Título'] || props['Title'] || props['Nome'] || props['Name'] || props['Codigo']) || 'Sem título'
+        // Mapeamento correto dos campos do Notion para o modelo Prisma
+        const titulo = extrairValor(props['Codigo'] || props['Título'] || props['Title'] || props['Nome'] || props['Name']) || 'Sem título'
         const descricao = extrairValor(props['Descrição'] || props['Descricao'] || props['Description']) || ''
-        const preco = parseFloat(extrairValor(props['Preço'] || props['Preco'] || props['Price']) || '0')
+        const preco = parseFloat(String(extrairValor(props['Valor'] || props['Preço'] || props['Preco'] || props['Price']) || '0'))
         const tipoStr = extrairValor(props['Tipo']) || 'Apartamento'
         const statusStr = extrairValor(props['Status']) || 'Disponível'
         const transacaoStr = extrairValor(props['Transação'] || props['Transacao'] || props['Tipo de Transação']) || 'Venda'
         const bairro = extrairValor(props['Bairro']) || ''
         const cidade = extrairValor(props['Cidade']) || ''
-        const estado = extrairValor(props['Estado']) || 'SP'
-        const quartos = parseInt(extrairValor(props['Quartos'] || props['Dormitórios'] || props['Dormitorios']) || '0')
-        const banheiros = parseInt(extrairValor(props['Banheiros']) || '0')
-        const vagas = parseInt(extrairValor(props['Vagas']) || '0')
+        const estado = extrairValor(props['Estado']) || 'SC'
+        const quartos = parseInt(String(extrairValor(props['Dormitórios'] || props['Dormitorios'] || props['Quartos']) || '0'))
+        const banheiros = parseInt(String(extrairValor(props['Banheiros']) || '0'))
+        const vagas = parseInt(String(extrairValor(props['Vagas']) || '0'))
+        const suites = parseInt(String(extrairValor(props['Suítes'] || props['Suites']) || '0'))
+        
+        // Metragem: tentar Area Privativa primeiro, depois Area Total
         const metragem = parseFloat(
-  extrairValor(
-    props['Metragem'] ||
-    props['Área'] ||
-    props['Area'] ||
-    props['Area Total'] ||
-    props['Área Total'] ||
-    props['Area Privativa'] ||
-    props['Área Privativa']
-  ) || '0'
-)
-        const suites = parseInt(extrairValor(props['Suítes'] || props['Suites']) || '0')
-        const comodidades = extrairValor(props['Comodidades']) || []
+          String(
+            extrairValor(props['Area Privativa'] || props['Área Privativa']) ||
+            extrairValor(props['Area Total'] || props['Área Total']) ||
+            extrairValor(props['Metragem'] || props['Área'] || props['Area']) ||
+            '0'
+          )
+        )
+
+        const comodidades = extrairValor(props['Diferenciais'] || props['Comodidades']) || []
         const destaque = extrairValor(props['Destaque']) || false
 
         // Gerar slug único
@@ -252,6 +267,7 @@ export async function POST(request: NextRequest) {
           })
           atualizados++
           detalhes.push(`✅ Atualizado: ${titulo}`)
+          console.log(`[Notion Sync] ✅ Atualizado: ${titulo}`)
         } else {
           // Verificar slug duplicado
           if (imovelExistente) {
@@ -283,12 +299,17 @@ export async function POST(request: NextRequest) {
           })
           criados++
           detalhes.push(`🆕 Criado: ${titulo}`)
+          console.log(`[Notion Sync] 🆕 Criado: ${titulo}`)
         }
       } catch (err: any) {
         erros++
-        detalhes.push(`❌ Erro: ${err.message}`)
+        const mensagemErro = `❌ Erro: ${err.message}`
+        detalhes.push(mensagemErro)
+        console.error(`[Notion Sync] ${mensagemErro}`, err)
       }
     }
+
+    console.log(`[Notion Sync] Concluído: ${criados} criados, ${atualizados} atualizados, ${erros} erros`)
 
     return NextResponse.json({
       message: 'Sincronização concluída',
@@ -296,7 +317,10 @@ export async function POST(request: NextRequest) {
       detalhes,
     })
   } catch (error) {
-    console.error('Erro na sincronização com Notion:', error)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    console.error('[Notion API] Erro na sincronização:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', detalhes: String(error) },
+      { status: 500 }
+    )
   }
 }
