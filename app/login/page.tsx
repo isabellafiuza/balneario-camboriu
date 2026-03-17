@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Home, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/admin'
@@ -49,7 +49,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-900 to-primary-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 text-white font-bold text-2xl">
             <Home className="w-8 h-8" />
@@ -58,12 +57,10 @@ export default function LoginPage() {
           <p className="text-primary-200 mt-2">Área da Corretora</p>
         </div>
 
-        {/* Card de login */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Entrar</h1>
           <p className="text-gray-600 mb-6">Acesse o painel de gerenciamento de imóveis</p>
 
-          {/* Erro de autenticação */}
           {(erroLogin || erro) && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
               {erroLogin || 'Erro de autenticação. Verifique suas credenciais.'}
@@ -139,5 +136,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <LoginContent />
+    </Suspense>
   )
 }
