@@ -112,18 +112,28 @@ async function sincronizar() {
       const props = pagina.properties
       const notionId = pagina.id
 
-      const titulo = extrairValor(props['Título'] || props['Title'] || props['Nome'] || props['Name']) || 'Sem título'
+      const titulo = extrairValor(props['Título'] || props['Title'] || props['Nome'] || props['Name'] || props['Codigo']) || 'Sem título'
       const descricao = extrairValor(props['Descrição'] || props['Descricao'] || props['Description']) || ''
-      const preco = parseFloat(String(extrairValor(props['Preço'] || props['Preco'] || props['Price']) || '0'))
+      const preco = parseFloat(extrairValor(props['Preço'] || props['Preco'] || props['Price'] || props['Valor']) || '0')
       const tipoStr = extrairValor(props['Tipo']) || 'Apartamento'
       const statusStr = extrairValor(props['Status']) || 'Disponível'
       const bairro = extrairValor(props['Bairro']) || ''
       const cidade = extrairValor(props['Cidade']) || ''
       const estado = extrairValor(props['Estado']) || 'SP'
-      const quartos = parseInt(String(extrairValor(props['Quartos']) || '0'))
+      const quartos = parseInt(extrairValor(props['Quartos'] || props['Dormitórios'] || props['Dormitorios']) || '0')
       const banheiros = parseInt(String(extrairValor(props['Banheiros']) || '0'))
       const vagas = parseInt(String(extrairValor(props['Vagas']) || '0'))
-      const metragem = parseFloat(String(extrairValor(props['Metragem'] || props['Área'] || props['Area']) || '0'))
+      const metragem = parseFloat(
+  extrairValor(
+    props['Metragem'] ||
+    props['Área'] ||
+    props['Area'] ||
+    props['Area Total'] ||
+    props['Área Total'] ||
+    props['Area Privativa'] ||
+    props['Área Privativa']
+  ) || '0'
+)
       const suites = parseInt(String(extrairValor(props['Suítes'] || props['Suites']) || '0'))
       const comodidades = extrairValor(props['Comodidades']) || []
       const destaque = extrairValor(props['Destaque']) || false
