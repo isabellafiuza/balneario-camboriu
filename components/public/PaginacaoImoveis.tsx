@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 interface PaginacaoImoveisProps {
   paginaAtual: number
   totalPaginas: number
-  searchParams: Record<string, string | undefined>
+  searchParams: Record<string, string | string[] | undefined>
 }
 
 export default function PaginacaoImoveis({
@@ -17,30 +17,45 @@ export default function PaginacaoImoveis({
 }: PaginacaoImoveisProps) {
   function gerarUrl(pagina: number) {
     const params = new URLSearchParams()
+
     Object.entries(searchParams).forEach(([chave, valor]) => {
-      if (valor && chave !== 'pagina') params.set(chave, valor)
+      if (!valor || chave === 'pagina') return
+
+      if (Array.isArray(valor)) {
+        if (valor[0]) params.set(chave, valor[0])
+      } else {
+        params.set(chave, valor)
+      }
     })
+
     params.set('pagina', String(pagina))
     return `/imoveis?${params.toString()}`
   }
 
-  // Gerar array de páginas para exibir
   const paginas: (number | '...')[] = []
+
   if (totalPaginas <= 7) {
     for (let i = 1; i <= totalPaginas; i++) paginas.push(i)
   } else {
     paginas.push(1)
+
     if (paginaAtual > 3) paginas.push('...')
-    for (let i = Math.max(2, paginaAtual - 1); i <= Math.min(totalPaginas - 1, paginaAtual + 1); i++) {
+
+    for (
+      let i = Math.max(2, paginaAtual - 1);
+      i <= Math.min(totalPaginas - 1, paginaAtual + 1);
+      i++
+    ) {
       paginas.push(i)
     }
+
     if (paginaAtual < totalPaginas - 2) paginas.push('...')
+
     paginas.push(totalPaginas)
   }
 
   return (
     <nav className="flex items-center justify-center gap-1" aria-label="Paginação">
-      {/* Anterior */}
       {paginaAtual > 1 ? (
         <Link
           href={gerarUrl(paginaAtual - 1)}
@@ -56,7 +71,6 @@ export default function PaginacaoImoveis({
         </span>
       )}
 
-      {/* Números de página */}
       {paginas.map((pagina, index) =>
         pagina === '...' ? (
           <span key={`ellipsis-${index}`} className="px-3 py-2 text-sm text-gray-400">
@@ -78,7 +92,6 @@ export default function PaginacaoImoveis({
         )
       )}
 
-      {/* Próxima */}
       {paginaAtual < totalPaginas ? (
         <Link
           href={gerarUrl(paginaAtual + 1)}
