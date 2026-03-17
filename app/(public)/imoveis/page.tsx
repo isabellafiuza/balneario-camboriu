@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 }
 
 interface SearchParams {
+  [key: string]: string | string[] | undefined
   busca?: string
   tipo?: string
   tipoTransacao?: string
@@ -26,47 +27,62 @@ interface SearchParams {
   destaque?: string
 }
 
+function getParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value
+}
+
 async function getImoveis(params: SearchParams) {
-  const pagina = parseInt(params.pagina || '1')
+  const pagina = parseInt(getParam(params.pagina) || '1')
   const porPagina = 12
   const skip = (pagina - 1) * porPagina
 
   const where: any = {}
 
-  // Status padrão: disponíveis
-  const status = params.status || 'DISPONIVEL'
+  const status = getParam(params.status) || 'DISPONIVEL'
   if (status !== 'TODOS') {
     where.status = status
   }
 
-  if (params.busca) {
+  const busca = getParam(params.busca)
+  const tipo = getParam(params.tipo)
+  const tipoTransacao = getParam(params.tipoTransacao)
+  const bairro = getParam(params.bairro)
+  const cidade = getParam(params.cidade)
+  const destaque = getParam(params.destaque)
+  const precoMin = getParam(params.precoMin)
+  const precoMax = getParam(params.precoMax)
+  const quartosMin = getParam(params.quartosMin)
+  const ordenar = getParam(params.ordenar)
+
+  if (busca) {
     where.OR = [
-      { titulo: { contains: params.busca, mode: 'insensitive' } },
-      { descricao: { contains: params.busca, mode: 'insensitive' } },
-      { bairro: { contains: params.busca, mode: 'insensitive' } },
-      { cidade: { contains: params.busca, mode: 'insensitive' } },
+      { titulo: { contains: busca, mode: 'insensitive' } },
+      { descricao: { contains: busca, mode: 'insensitive' } },
+      { bairro: { contains: busca, mode: 'insensitive' } },
+      { cidade: { contains: busca, mode: 'insensitive' } },
     ]
   }
-  if (params.tipo) where.tipo = params.tipo
-  if (params.tipoTransacao) where.tipoTransacao = params.tipoTransacao
-  if (params.bairro) where.bairro = { contains: params.bairro, mode: 'insensitive' }
-  if (params.cidade) where.cidade = { contains: params.cidade, mode: 'insensitive' }
-  if (params.destaque === 'true') where.destaque = true
 
-  if (params.precoMin || params.precoMax) {
+  if (tipo) where.tipo = tipo
+  if (tipoTransacao) where.tipoTransacao = tipoTransacao
+  if (bairro) where.bairro = { contains: bairro, mode: 'insensitive' }
+  if (cidade) where.cidade = { contains: cidade, mode: 'insensitive' }
+  if (destaque === 'true') where.destaque = true
+
+  if (precoMin || precoMax) {
     where.preco = {}
-    if (params.precoMin) where.preco.gte = parseFloat(params.precoMin)
-    if (params.precoMax) where.preco.lte = parseFloat(params.precoMax)
+    if (precoMin) where.preco.gte = parseFloat(precoMin)
+    if (precoMax) where.preco.lte = parseFloat(precoMax)
   }
 
-  if (params.quartosMin) {
-    where.quartos = { gte: parseInt(params.quartosMin) }
+  if (quartosMin) {
+    where.quartos = { gte: parseInt(quartosMin) }
   }
 
   let orderBy: any = { createdAt: 'desc' }
-  if (params.ordenar === 'preco_asc') orderBy = { preco: 'asc' }
-  else if (params.ordenar === 'preco_desc') orderBy = { preco: 'desc' }
-  else if (params.ordenar === 'data_asc') orderBy = { createdAt: 'asc' }
+  if (ordenar === 'preco_asc') orderBy = { preco: 'asc' }
+  else if (ordenar === 'preco_desc') orderBy = { preco: 'desc' }
+  else if (ordenar === 'data_asc') orderBy = { createdAt: 'asc' }
 
   const [imoveis, total] = await Promise.all([
     prisma.imovel.findMany({
@@ -101,25 +117,24 @@ export default async function ImoveisPage({
   const { imoveis, total, pagina, totalPaginas } = await getImoveis(searchParams)
 
   const temFiltros = !!(
-    searchParams.busca ||
-    searchParams.tipo ||
-    searchParams.tipoTransacao ||
-    searchParams.bairro ||
-    searchParams.cidade ||
-    searchParams.precoMin ||
-    searchParams.precoMax ||
-    searchParams.quartosMin
+    getParam(searchParams.busca) ||
+    getParam(searchParams.tipo) ||
+    getParam(searchParams.tipoTransacao) ||
+    getParam(searchParams.bairro) ||
+    getParam(searchParams.cidade) ||
+    getParam(searchParams.precoMin) ||
+    getParam(searchParams.precoMax) ||
+    getParam(searchParams.quartosMin)
   )
 
   return (
     <div className="py-8">
       <div className="container-page">
-        {/* Cabeçalho */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {searchParams.tipoTransacao === 'ALUGUEL'
+            {getParam(searchParams.tipoTransacao) === 'ALUGUEL'
               ? 'Imóveis para Alugar'
-              : searchParams.tipoTransacao === 'VENDA'
+              : getParam(searchParams.tipoTransacao) === 'VENDA'
               ? 'Imóveis à Venda'
               : 'Todos os Imóveis'}
           </h1>
@@ -130,14 +145,12 @@ export default async function ImoveisPage({
           </p>
         </div>
 
-        {/* Filtros */}
         <div className="mb-8">
           <Suspense fallback={<div className="h-16 bg-white rounded-xl animate-pulse" />}>
             <FiltroImoveis />
           </Suspense>
         </div>
 
-        {/* Grade de imóveis */}
         {imoveis.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -146,7 +159,6 @@ export default async function ImoveisPage({
               ))}
             </div>
 
-            {/* Paginação */}
             {totalPaginas > 1 && (
               <PaginacaoImoveis
                 paginaAtual={pagina}
