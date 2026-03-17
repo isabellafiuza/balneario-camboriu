@@ -4,8 +4,10 @@
  * 
  * Requer as variáveis de ambiente:
  * - NOTION_API_KEY
- * - NOTION_DATABASE_ID
  * - DATABASE_URL
+ * 
+ * O ID do banco de dados está hardcoded como padrão:
+ * - b83ab1514e4b49e281206d38ea926e05
  */
 
 import { PrismaClient, TipoImovel, StatusImovel, TipoTransacao } from '@prisma/client'
@@ -17,6 +19,8 @@ const prisma = new PrismaClient()
 
 const NOTION_API_URL = 'https://api.notion.com/v1'
 const NOTION_VERSION = '2022-06-28'
+// ID correto do banco de dados do Notion
+const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID || 'b83ab1514e4b49e281206d38ea926e05'
 
 function slugify(texto: string): string {
   return texto
@@ -52,11 +56,17 @@ function extrairValor(propriedade: any): any {
 function mapearTipo(valor: string): TipoImovel {
   const mapa: Record<string, TipoImovel> = {
     'Apartamento': TipoImovel.APARTAMENTO,
+    'apartamento': TipoImovel.APARTAMENTO,
     'Casa': TipoImovel.CASA,
+    'casa': TipoImovel.CASA,
     'Terreno': TipoImovel.TERRENO,
+    'terreno': TipoImovel.TERRENO,
     'Comercial': TipoImovel.COMERCIAL,
+    'comercial': TipoImovel.COMERCIAL,
     'Cobertura': TipoImovel.COBERTURA,
+    'cobertura': TipoImovel.COBERTURA,
     'Studio': TipoImovel.STUDIO,
+    'studio': TipoImovel.STUDIO,
   }
   return mapa[valor] || TipoImovel.APARTAMENTO
 }
@@ -65,19 +75,39 @@ function mapearStatus(valor: string): StatusImovel {
   const mapa: Record<string, StatusImovel> = {
     'Disponível': StatusImovel.DISPONIVEL,
     'Disponivel': StatusImovel.DISPONIVEL,
+    'disponivel': StatusImovel.DISPONIVEL,
     'Vendido': StatusImovel.VENDIDO,
+    'vendido': StatusImovel.VENDIDO,
     'Alugado': StatusImovel.ALUGADO,
+    'alugado': StatusImovel.ALUGADO,
     'Reservado': StatusImovel.RESERVADO,
+    'reservado': StatusImovel.RESERVADO,
   }
   return mapa[valor] || StatusImovel.DISPONIVEL
 }
 
+function mapearTransacao(valor: string): TipoTransacao {
+  const mapa: Record<string, TipoTransacao> = {
+    'Venda': TipoTransacao.VENDA,
+    'venda': TipoTransacao.VENDA,
+    'Aluguel': TipoTransacao.ALUGUEL,
+    'aluguel': TipoTransacao.ALUGUEL,
+    'Venda ou Aluguel': TipoTransacao.VENDA_ALUGUEL,
+  }
+  return mapa[valor] || TipoTransacao.VENDA
+}
+
 async function sincronizar() {
   const apiKey = process.env.NOTION_API_KEY
-  const databaseId = process.env.NOTION_DATABASE_ID
+  const databaseId = NOTION_DATABASE_ID
 
-  if (!apiKey || !databaseId) {
-    console.error('❌ Configure NOTION_API_KEY e NOTION_DATABASE_ID no .env.local')
+  if (!apiKey) {
+    console.error('❌ Configure NOTION_API_KEY no .env.local')
+    process.exit(1)
+  }
+
+  if (!databaseId) {
+    console.error('❌ Configure NOTION_DATABASE_ID no .env.local ou use o padrão')
     process.exit(1)
   }
 
@@ -97,6 +127,8 @@ async function sincronizar() {
   if (!response.ok) {
     const erro = await response.json()
     console.error('❌ Erro ao consultar Notion:', erro)
+    console.error('   Status:', response.status)
+    console.error('   Detalhes:', JSON.stringify(erro, null, 2))
     process.exit(1)
   }
 
@@ -112,30 +144,32 @@ async function sincronizar() {
       const props = pagina.properties
       const notionId = pagina.id
 
-      const titulo = extrairValor(props['Título'] || props['Title'] || props['Nome'] || props['Name'] || props['Codigo']) || 'Sem título'
+      // Mapeamento correto dos campos do Notion
+      const titulo = extrairValor(props['Codigo'] || props['Título'] || props['Title'] || props['Nome'] || props['Name']) || 'Sem título'
       const descricao = extrairValor(props['Descrição'] || props['Descricao'] || props['Description']) || ''
-      const preco = parseFloat(extrairValor(props['Preço'] || props['Preco'] || props['Price'] || props['Valor']) || '0')
+      const preco = parseFloat(String(extrairValor(props['Valor'] || props['Preço'] || props['Preco'] || props['Price']) || '0'))
       const tipoStr = extrairValor(props['Tipo']) || 'Apartamento'
       const statusStr = extrairValor(props['Status']) || 'Disponível'
+      const transacaoStr = extrairValor(props['Transação'] || props['Transacao'] || props['Tipo de Transação']) || 'Venda'
       const bairro = extrairValor(props['Bairro']) || ''
       const cidade = extrairValor(props['Cidade']) || ''
-      const estado = extrairValor(props['Estado']) || 'SP'
-      const quartos = parseInt(extrairValor(props['Quartos'] || props['Dormitórios'] || props['Dormitorios']) || '0')
+      const estado = extrairValor(props['Estado']) || 'SC'
+      const quartos = parseInt(String(extrairValor(props['Dormitórios'] || props['Dormitorios'] || props['Quartos']) || '0'))
       const banheiros = parseInt(String(extrairValor(props['Banheiros']) || '0'))
       const vagas = parseInt(String(extrairValor(props['Vagas']) || '0'))
-      const metragem = parseFloat(
-  extrairValor(
-    props['Metragem'] ||
-    props['Área'] ||
-    props['Area'] ||
-    props['Area Total'] ||
-    props['Área Total'] ||
-    props['Area Privativa'] ||
-    props['Área Privativa']
-  ) || '0'
-)
       const suites = parseInt(String(extrairValor(props['Suítes'] || props['Suites']) || '0'))
-      const comodidades = extrairValor(props['Comodidades']) || []
+      
+      // Metragem: tentar Area Privativa primeiro, depois Area Total
+      const metragem = parseFloat(
+        String(
+          extrairValor(props['Area Privativa'] || props['Área Privativa']) ||
+          extrairValor(props['Area Total'] || props['Área Total']) ||
+          extrairValor(props['Metragem'] || props['Área'] || props['Area']) ||
+          '0'
+        )
+      )
+
+      const comodidades = extrairValor(props['Diferenciais'] || props['Comodidades']) || []
       const destaque = extrairValor(props['Destaque']) || false
 
       let slug = slugify(titulo)
@@ -147,11 +181,18 @@ async function sincronizar() {
         await prisma.imovel.update({
           where: { id: imovelExistente.id },
           data: {
-            titulo, descricao, preco,
+            titulo,
+            descricao,
+            preco,
             tipo: mapearTipo(tipoStr),
+            tipoTransacao: mapearTransacao(transacaoStr),
             status: mapearStatus(statusStr),
-            bairro, cidade, estado,
-            quartos, banheiros, vagas,
+            bairro,
+            cidade,
+            estado,
+            quartos,
+            banheiros,
+            vagas,
             metragem: metragem || 0,
             suites,
             comodidades: Array.isArray(comodidades) ? comodidades : [],
@@ -164,11 +205,20 @@ async function sincronizar() {
         if (imovelExistente) slug = `${slug}-${Date.now()}`
         await prisma.imovel.create({
           data: {
-            notionId, slug, titulo, descricao, preco,
+            notionId,
+            slug,
+            titulo,
+            descricao,
+            preco,
             tipo: mapearTipo(tipoStr),
+            tipoTransacao: mapearTransacao(transacaoStr),
             status: mapearStatus(statusStr),
-            bairro, cidade, estado,
-            quartos, banheiros, vagas,
+            bairro,
+            cidade,
+            estado,
+            quartos,
+            banheiros,
+            vagas,
             metragem: metragem || 0,
             suites,
             comodidades: Array.isArray(comodidades) ? comodidades : [],
