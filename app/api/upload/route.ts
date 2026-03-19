@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest) {
         principal: principal || totalImagens === 0,
       },
     })
+    revalidatePath('/')
+revalidatePath('/imoveis')
+revalidatePath(`/imoveis/${imovel.slug}`)
 
     return NextResponse.json(imagem, { status: 201 })
   } catch (error) {
@@ -147,6 +151,17 @@ export async function DELETE(request: NextRequest) {
         })
       }
     }
+    const imovelAtualizado = await prisma.imovel.findUnique({
+  where: { id: imagem.imovelId },
+  select: { slug: true },
+})
+
+revalidatePath('/')
+revalidatePath('/imoveis')
+
+if (imovelAtualizado?.slug) {
+  revalidatePath(`/imoveis/${imovelAtualizado.slug}`)
+}
 
     return NextResponse.json({ message: 'Imagem removida com sucesso' })
   } catch (error) {
