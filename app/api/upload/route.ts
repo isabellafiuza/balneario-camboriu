@@ -1,6 +1,6 @@
-import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { revalidatePath } from 'next/cache'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import path from 'path'
@@ -17,6 +17,7 @@ function garantirDiretorio() {
   }
 }
 
+// POST /api/upload - Upload de imagem para um imóvel
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
 
     const imovel = await prisma.imovel.findUnique({
       where: { id: imovelId },
+      select: {
+        id: true,
+        titulo: true,
+        slug: true,
+      },
     })
 
     if (!imovel) {
@@ -91,9 +97,10 @@ export async function POST(request: NextRequest) {
         principal: principal || totalImagens === 0,
       },
     })
+
     revalidatePath('/')
-revalidatePath('/imoveis')
-revalidatePath(`/imoveis/${imovel.slug}`)
+    revalidatePath('/imoveis')
+    revalidatePath(`/imoveis/${imovel.slug}`)
 
     return NextResponse.json(imagem, { status: 201 })
   } catch (error) {
@@ -102,6 +109,7 @@ revalidatePath(`/imoveis/${imovel.slug}`)
   }
 }
 
+// DELETE /api/upload - Remover imagem
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -119,6 +127,12 @@ export async function DELETE(request: NextRequest) {
 
     const imagem = await prisma.imagemImovel.findUnique({
       where: { id: imagemId },
+      select: {
+        id: true,
+        url: true,
+        principal: true,
+        imovelId: true,
+      },
     })
 
     if (!imagem) {
@@ -151,17 +165,18 @@ export async function DELETE(request: NextRequest) {
         })
       }
     }
+
     const imovelAtualizado = await prisma.imovel.findUnique({
-  where: { id: imagem.imovelId },
-  select: { slug: true },
-})
+      where: { id: imagem.imovelId },
+      select: { slug: true },
+    })
 
-revalidatePath('/')
-revalidatePath('/imoveis')
+    revalidatePath('/')
+    revalidatePath('/imoveis')
 
-if (imovelAtualizado?.slug) {
-  revalidatePath(`/imoveis/${imovelAtualizado.slug}`)
-}
+    if (imovelAtualizado?.slug) {
+      revalidatePath(`/imoveis/${imovelAtualizado.slug}`)
+    }
 
     return NextResponse.json({ message: 'Imagem removida com sucesso' })
   } catch (error) {
