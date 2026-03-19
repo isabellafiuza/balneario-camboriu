@@ -1,25 +1,10 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
-import Providers from '@/components/Providers'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: {
-    default: process.env.NEXT_PUBLIC_SITE_NAME || 'Imóveis Premium',
-    template: `%s | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Imóveis Premium'}`,
-  },
-  description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || 'Encontre o imóvel dos seus sonhos',
-  keywords: ['imóveis', 'apartamentos', 'casas', 'terrenos', 'comprar imóvel', 'alugar imóvel'],
-  authors: [{ name: process.env.NEXT_PUBLIC_SITE_NAME || 'Imóveis Premium' }],
-  openGraph: {
-    type: 'website',
-    locale: 'pt_BR',
-    siteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Imóveis Premium',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  title: 'Isabella Fiuza',
+  description: 'Imóveis em Balneário Camboriú e região',
 }
 
 export default function RootLayout({
@@ -29,10 +14,36 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen flex flex-col">
-        <Providers>
-          {children}
-        </Providers>
+      <head>
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+
+            fbq('init', '1348676193951546');
+            fbq('track', 'PageView');
+          `}
+        </Script>
+      </head>
+
+      <body>
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: 'none' }}
+            src="https://www.facebook.com/tr?id=1348676193951546&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
+
+        {children}
       </body>
     </html>
   )

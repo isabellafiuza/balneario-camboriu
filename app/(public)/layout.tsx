@@ -1,3 +1,4 @@
+import Script from 'next/script'
 import Header from '@/components/public/Header'
 import Footer from '@/components/public/Footer'
 

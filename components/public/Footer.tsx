@@ -2,96 +2,107 @@ import Link from 'next/link'
 import { Home, Phone, Mail, MapPin } from 'lucide-react'
 
 export default function Footer() {
-  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Imóveis Premium'
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5511999999999'
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contato@exemplo.com'
-  const telefone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '(11) 99999-9999'
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Isabella Fiuza'
+  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5547988419882'
+  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contato@isabellafiuza.com.br'
+  const telefone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '(47) 98841-9882'
   const anoAtual = new Date().getFullYear()
 
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-auto">
-      <div className="container-page py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Sobre */}
+    <footer className="mt-auto bg-[#1F3D36] text-white">
+      <div className="container-page py-14">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
-            <div className="flex items-center gap-2 text-white font-bold text-xl mb-4">
-              <Home className="w-6 h-6 text-primary-400" />
+            <div className="mb-4 flex items-center gap-2 text-lg font-semibold">
+              <Home className="h-5 w-5 text-secondary-400" />
               <span>{siteName}</span>
             </div>
-            <p className="text-sm leading-relaxed text-gray-400">
-              Especialistas em imóveis residenciais e comerciais. Encontre o imóvel perfeito para você e sua família.
+
+            <p className="max-w-sm text-sm leading-7 text-white/80">
+              Curadoria imobiliária em Balneário Camboriú e região, com atendimento
+              próximo, leitura de mercado e orientação estratégica para cada momento da sua busca.
             </p>
           </div>
 
-          {/* Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Navegação</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90">
+              Navegação
+            </h3>
+
+            <ul className="space-y-3 text-sm text-white/70">
               <li>
-                <Link href="/" className="hover:text-white transition-colors">
-                  Página Inicial
+                <Link href="/" className="transition-colors hover:text-secondary-400">
+                  Página inicial
                 </Link>
               </li>
               <li>
-                <Link href="/imoveis" className="hover:text-white transition-colors">
-                  Todos os Imóveis
+                <Link href="/imoveis" className="transition-colors hover:text-secondary-400">
+                  Todos os imóveis
                 </Link>
               </li>
               <li>
-                <Link href="/imoveis?tipoTransacao=VENDA" className="hover:text-white transition-colors">
-                  Imóveis à Venda
+                <Link
+                  href="/imoveis?tipoTransacao=VENDA"
+                  className="transition-colors hover:text-secondary-400"
+                >
+                  Imóveis à venda
                 </Link>
               </li>
               <li>
-                <Link href="/imoveis?tipoTransacao=ALUGUEL" className="hover:text-white transition-colors">
-                  Imóveis para Alugar
+                <Link
+                  href="/imoveis?tipoTransacao=ALUGUEL"
+                  className="transition-colors hover:text-secondary-400"
+                >
+                  Imóveis para alugar
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-white transition-colors">
-                  Área da Corretora
+                <Link href="/login" className="transition-colors hover:text-secondary-400">
+                  Área da corretora
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contato */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Contato</h3>
-            <ul className="space-y-3 text-sm">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-white/90">
+              Contato
+            </h3>
+
+            <ul className="space-y-4 text-sm text-white/70">
               <li>
                 <a
                   href={`https://wa.me/${whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-white transition-colors"
+                  className="flex items-center gap-3 transition-colors hover:text-secondary-400"
                 >
-                  <Phone className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  <Phone className="h-4 w-4 flex-shrink-0 text-secondary-400" />
                   <span>{telefone}</span>
                 </a>
               </li>
+
               <li>
                 <a
                   href={`mailto:${email}`}
-                  className="flex items-center gap-2 hover:text-white transition-colors"
+                  className="flex items-center gap-3 transition-colors hover:text-secondary-400"
                 >
-                  <Mail className="w-4 h-4 text-primary-400 flex-shrink-0" />
+                  <Mail className="h-4 w-4 flex-shrink-0 text-secondary-400" />
                   <span>{email}</span>
                 </a>
               </li>
-              <li>
-                <span className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <span>São Paulo, SP - Brasil</span>
-                </span>
+
+              <li className="flex items-center gap-3">
+                <MapPin className="h-4 w-4 flex-shrink-0 text-secondary-400" />
+                <span>Balneário Camboriú - SC</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {anoAtual} {siteName}. Todos os direitos reservados.</p>
-          <p>CRECI: XXXXX-F</p>
+          <p>CRECI 73623</p>
         </div>
       </div>
     </footer>
