@@ -82,8 +82,6 @@ model Imovel {
   vagas           Int            @default(0)
   metragem        Float
   metragemTerreno Float?
-  condominio Float?
-  iptu        Float?
   suites          Int            @default(0)
   comodidades     String[]       @default([])
   metaTitle       String?
