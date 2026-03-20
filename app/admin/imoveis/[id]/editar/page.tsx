@@ -31,6 +31,50 @@ export default async function EditarImovelPage({ params }: Props) {
             <p className="text-gray-600 mt-0.5 truncate max-w-md">{imovel.titulo}</p>
           </div>
         </div>
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Preço
+    </label>
+    <input
+      type="number"
+      name="preco"
+      step="0.01"
+      className="input"
+      defaultValue={imovel?.preco ?? ''}
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Condomínio
+    </label>
+    <input
+      type="number"
+      name="condominio"
+      step="0.01"
+      className="input"
+      defaultValue={imovel.condominio ?? undefined}
+      placeholder="Ex: 850"
+    />
+  </div>
+
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      IPTU
+    </label>
+    <input
+      type="number"
+      name="iptu"
+      step="0.01"
+      className="input"
+      defaultValue={imovel.iptu ?? undefined}
+      placeholder="Ex: 320"
+    />
+  </div>
+</div>
+
         <Link
           href={`/imoveis/${imovel.slug}`}
           target="_blank"

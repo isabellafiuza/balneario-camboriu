@@ -255,6 +255,40 @@ export default async function ImovelPage({ params }: Props) {
                     <span>Área</span>
                     <span className="font-medium text-gray-900">{formatarMetragem(imovel.metragem)}</span>
                   </div>
+      {/* Custos adicionais */}
+{(imovel.condominio > 0 || imovel.iptu > 0) && (
+  <div className="mt-4 pt-4 border-t border-gray-200">
+    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+      Custos adicionais
+    </p>
+
+    <div className="space-y-1 text-sm">
+      {imovel.condominio > 0 && (
+        <div className="flex justify-between">
+          <span className="text-gray-500">Condomínio</span>
+          <span className="font-medium text-gray-700">
+            {imovel.condominio.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
+          </span>
+        </div>
+      )}
+
+      {imovel.iptu > 0 && (
+        <div className="flex justify-between">
+          <span className="text-gray-500">IPTU</span>
+          <span className="font-medium text-gray-700">
+            {imovel.iptu.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
+          </span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
                   {imovel.quartos > 0 && (
                     <div className="flex justify-between text-gray-600">
                       <span>Quartos</span>

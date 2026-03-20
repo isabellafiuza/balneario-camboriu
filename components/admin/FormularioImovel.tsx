@@ -18,6 +18,8 @@ interface ImovelData {
   titulo?: string
   descricao?: string
   preco?: number
+  condominio?: number | null
+  iptu?: number | null
   tipo?: string
   tipoTransacao?: string
   status?: string
@@ -47,11 +49,36 @@ interface FormularioImovelProps {
 }
 
 const COMODIDADES_PADRAO = [
-  'Piscina', 'Academia', 'Portaria 24h', 'Salão de Festas', 'Churrasqueira',
-  'Área Gourmet', 'Playground', 'Segurança 24h', 'Jardim', 'Bicicletário',
-  'Elevador', 'Gerador', 'Câmeras de Segurança', 'Interfone', 'Varanda',
-  'Ar Condicionado', 'Aquecimento Solar', 'Cozinha Americana',
+  'Piscina',
+  'Academia',
+  'Portaria 24h',
+  'Salão de Festas',
+  'Churrasqueira',
+  'Área Gourmet',
+  'Playground',
+  'Segurança 24h',
+  'Jardim',
+  'Bicicletário',
+  'Elevador',
+  'Gerador',
+  'Câmeras de Segurança',
+  'Interfone',
+  'Varanda',
+  'Ar Condicionado',
+  'Aquecimento Solar',
+  'Cozinha Americana',
 ]
+
+type CampoNumerico =
+  | 'quartos'
+  | 'suites'
+  | 'banheiros'
+  | 'vagas'
+  | 'metragem'
+  | 'metragemTerreno'
+  | 'preco'
+  | 'condominio'
+  | 'iptu'
 
 export default function FormularioImovel({ imovel, modo }: FormularioImovelProps) {
   const router = useRouter()
@@ -66,6 +93,8 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
     titulo: imovel?.titulo || '',
     descricao: imovel?.descricao || '',
     preco: imovel?.preco?.toString() || '',
+    condominio: imovel?.condominio?.toString() || '',
+    iptu: imovel?.iptu?.toString() || '',
     tipo: imovel?.tipo || 'APARTAMENTO',
     tipoTransacao: imovel?.tipoTransacao || 'VENDA',
     status: imovel?.status || 'DISPONIVEL',
@@ -87,6 +116,20 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
     metaDescription: imovel?.metaDescription || '',
     destaque: imovel?.destaque || false,
   })
+
+  function atualizarCampo<K extends keyof typeof form>(campo: K, valor: (typeof form)[K]) {
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }))
+  }
+
+  function atualizarCampoNumerico(campo: CampoNumerico, valor: string) {
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }))
+  }
 
   function toggleComodidade(item: string) {
     setForm((prev) => ({
@@ -158,6 +201,8 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
       titulo: form.titulo,
       descricao: form.descricao,
       preco: parseFloat(form.preco),
+      condominio: form.condominio ? parseFloat(form.condominio) : undefined,
+      iptu: form.iptu ? parseFloat(form.iptu) : undefined,
       tipo: form.tipo,
       tipoTransacao: form.tipoTransacao,
       status: form.status,
@@ -195,7 +240,6 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         setSucesso(modo === 'criar' ? 'Imóvel criado com sucesso!' : 'Imóvel atualizado com sucesso!')
 
         if (modo === 'criar') {
-          // Redirecionar para edição para permitir upload de imagens
           setTimeout(() => {
             router.push(`/admin/imoveis/${resultado.id}/editar`)
           }, 1000)
@@ -213,28 +257,28 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Alertas */}
       {erro && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {erro}
         </div>
       )}
+
       {sucesso && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
           {sucesso}
         </div>
       )}
 
-      {/* Informações básicas */}
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Informações Básicas</h2>
+
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="label-field">Título *</label>
             <input
               type="text"
               value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              onChange={(e) => atualizarCampo('titulo', e.target.value)}
               placeholder="Ex: Apartamento 3 Quartos - Vila Madalena"
               className="input-field"
               required
@@ -245,7 +289,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <label className="label-field">Descrição *</label>
             <textarea
               value={form.descricao}
-              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              onChange={(e) => atualizarCampo('descricao', e.target.value)}
               placeholder="Descreva o imóvel em detalhes..."
               className="input-field min-h-[120px] resize-y"
               required
@@ -258,7 +302,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
               <label className="label-field">Tipo de Imóvel *</label>
               <select
                 value={form.tipo}
-                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                onChange={(e) => atualizarCampo('tipo', e.target.value)}
                 className="input-field"
                 required
               >
@@ -275,7 +319,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
               <label className="label-field">Tipo de Transação *</label>
               <select
                 value={form.tipoTransacao}
-                onChange={(e) => setForm({ ...form, tipoTransacao: e.target.value })}
+                onChange={(e) => atualizarCampo('tipoTransacao', e.target.value)}
                 className="input-field"
                 required
               >
@@ -289,7 +333,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
               <label className="label-field">Status *</label>
               <select
                 value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                onChange={(e) => atualizarCampo('status', e.target.value)}
                 className="input-field"
                 required
               >
@@ -301,13 +345,13 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="label-field">Preço (R$) *</label>
               <input
                 type="number"
                 value={form.preco}
-                onChange={(e) => setForm({ ...form, preco: e.target.value })}
+                onChange={(e) => atualizarCampoNumerico('preco', e.target.value)}
                 placeholder="Ex: 850000"
                 className="input-field"
                 required
@@ -316,33 +360,62 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-6">
+            <div>
+              <label className="label-field">Condomínio (R$)</label>
               <input
-                type="checkbox"
-                id="destaque"
-                checked={form.destaque}
-                onChange={(e) => setForm({ ...form, destaque: e.target.checked })}
-                className="w-4 h-4 text-primary-600 rounded"
+                type="number"
+                value={form.condominio}
+                onChange={(e) => atualizarCampoNumerico('condominio', e.target.value)}
+                placeholder="Ex: 950"
+                className="input-field"
+                min="0"
+                step="0.01"
               />
-              <label htmlFor="destaque" className="flex items-center gap-1.5 text-sm font-medium text-gray-700 cursor-pointer">
-                <Star className="w-4 h-4 text-yellow-500" />
-                Marcar como destaque
-              </label>
             </div>
+
+            <div>
+              <label className="label-field">IPTU (R$)</label>
+              <input
+                type="number"
+                value={form.iptu}
+                onChange={(e) => atualizarCampoNumerico('iptu', e.target.value)}
+                placeholder="Ex: 320"
+                className="input-field"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="destaque"
+              checked={form.destaque}
+              onChange={(e) => atualizarCampo('destaque', e.target.checked)}
+              className="w-4 h-4 text-primary-600 rounded"
+            />
+            <label
+              htmlFor="destaque"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 cursor-pointer"
+            >
+              <Star className="w-4 h-4 text-yellow-500" />
+              Marcar como destaque
+            </label>
           </div>
         </div>
       </div>
 
-      {/* Localização */}
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Localização</h2>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="label-field">Bairro *</label>
             <input
               type="text"
               value={form.bairro}
-              onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+              onChange={(e) => atualizarCampo('bairro', e.target.value)}
               placeholder="Ex: Vila Madalena"
               className="input-field"
               required
@@ -354,7 +427,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.cidade}
-              onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+              onChange={(e) => atualizarCampo('cidade', e.target.value)}
               placeholder="Ex: São Paulo"
               className="input-field"
               required
@@ -366,7 +439,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value.toUpperCase().slice(0, 2) })}
+              onChange={(e) => atualizarCampo('estado', e.target.value.toUpperCase().slice(0, 2))}
               placeholder="SP"
               className="input-field"
               maxLength={2}
@@ -378,7 +451,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.cep}
-              onChange={(e) => setForm({ ...form, cep: e.target.value })}
+              onChange={(e) => atualizarCampo('cep', e.target.value)}
               placeholder="00000-000"
               className="input-field"
             />
@@ -389,7 +462,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.endereco}
-              onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+              onChange={(e) => atualizarCampo('endereco', e.target.value)}
               placeholder="Rua, Avenida..."
               className="input-field"
             />
@@ -400,7 +473,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.numero}
-              onChange={(e) => setForm({ ...form, numero: e.target.value })}
+              onChange={(e) => atualizarCampo('numero', e.target.value)}
               placeholder="123"
               className="input-field"
             />
@@ -411,7 +484,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="text"
               value={form.complemento}
-              onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+              onChange={(e) => atualizarCampo('complemento', e.target.value)}
               placeholder="Apto 42, Bloco B..."
               className="input-field"
             />
@@ -419,22 +492,22 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         </div>
       </div>
 
-      {/* Características */}
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Características</h2>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { label: 'Quartos', key: 'quartos' },
-            { label: 'Suítes', key: 'suites' },
-            { label: 'Banheiros', key: 'banheiros' },
-            { label: 'Vagas', key: 'vagas' },
+            { label: 'Quartos', key: 'quartos' as const },
+            { label: 'Suítes', key: 'suites' as const },
+            { label: 'Banheiros', key: 'banheiros' as const },
+            { label: 'Vagas', key: 'vagas' as const },
           ].map((campo) => (
             <div key={campo.key}>
               <label className="label-field">{campo.label}</label>
               <input
                 type="number"
-                value={form[campo.key as keyof typeof form] as string}
-                onChange={(e) => setForm({ ...form, [campo.key]: e.target.value })}
+                value={form[campo.key]}
+                onChange={(e) => atualizarCampoNumerico(campo.key, e.target.value)}
                 className="input-field"
                 min="0"
               />
@@ -446,7 +519,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="number"
               value={form.metragem}
-              onChange={(e) => setForm({ ...form, metragem: e.target.value })}
+              onChange={(e) => atualizarCampoNumerico('metragem', e.target.value)}
               placeholder="95"
               className="input-field"
               required
@@ -460,7 +533,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <input
               type="number"
               value={form.metragemTerreno}
-              onChange={(e) => setForm({ ...form, metragemTerreno: e.target.value })}
+              onChange={(e) => atualizarCampoNumerico('metragemTerreno', e.target.value)}
               placeholder="200"
               className="input-field"
               min="0"
@@ -470,9 +543,9 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         </div>
       </div>
 
-      {/* Comodidades */}
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Comodidades</h2>
+
         <div className="flex flex-wrap gap-2 mb-4">
           {COMODIDADES_PADRAO.map((item) => (
             <button
@@ -490,7 +563,6 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
           ))}
         </div>
 
-        {/* Adicionar comodidade personalizada */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -509,11 +581,13 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
           </button>
         </div>
 
-        {/* Comodidades selecionadas */}
         {form.comodidades.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {form.comodidades.map((item) => (
-              <span key={item} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 text-xs rounded-full">
+              <span
+                key={item}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 text-xs rounded-full"
+              >
                 {item}
                 <button
                   type="button"
@@ -528,18 +602,19 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         )}
       </div>
 
-      {/* Imagens - Apenas no modo editar */}
       {modo === 'editar' && imovel?.id && (
         <div className="card p-6">
           <h2 className="font-semibold text-gray-900 mb-4">Imagens</h2>
 
-          {/* Upload */}
           <div className="mb-4">
             <label className="block">
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-400 transition-colors cursor-pointer">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-700">Clique para adicionar imagens</p>
-                <p className="text-xs text-gray-500 mt-1">JPEG, PNG ou WebP · Máximo 10MB por arquivo</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  JPEG, PNG ou WebP · Máximo 10MB por arquivo
+                </p>
+
                 {uploadando && (
                   <div className="flex items-center justify-center gap-2 mt-2 text-primary-600">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -547,6 +622,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
                   </div>
                 )}
               </div>
+
               <input
                 type="file"
                 accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -558,7 +634,6 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             </label>
           </div>
 
-          {/* Grid de imagens */}
           {imagens.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {imagens.map((imagem) => (
@@ -577,6 +652,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
                       </div>
                     )}
                   </div>
+
                   <button
                     type="button"
                     onClick={() => removerImagem(imagem.id)}
@@ -597,17 +673,19 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         </div>
       )}
 
-      {/* SEO */}
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-1">SEO (opcional)</h2>
-        <p className="text-sm text-gray-500 mb-4">Personalize como o imóvel aparece nos buscadores</p>
+        <p className="text-sm text-gray-500 mb-4">
+          Personalize como o imóvel aparece nos buscadores
+        </p>
+
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="label-field">Meta Título (máx. 60 caracteres)</label>
             <input
               type="text"
               value={form.metaTitle}
-              onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
+              onChange={(e) => atualizarCampo('metaTitle', e.target.value)}
               placeholder="Deixe em branco para usar o título do imóvel"
               className="input-field"
               maxLength={60}
@@ -619,7 +697,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
             <label className="label-field">Meta Descrição (máx. 160 caracteres)</label>
             <textarea
               value={form.metaDescription}
-              onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
+              onChange={(e) => atualizarCampo('metaDescription', e.target.value)}
               placeholder="Descrição para os buscadores..."
               className="input-field"
               maxLength={160}
@@ -630,14 +708,13 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         </div>
       </div>
 
-      {/* Aviso para criar */}
       {modo === 'criar' && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-          <strong>Dica:</strong> Após criar o imóvel, você será redirecionado para a página de edição onde poderá adicionar as imagens.
+          <strong>Dica:</strong> Após criar o imóvel, você será redirecionado para a página de
+          edição onde poderá adicionar as imagens.
         </div>
       )}
 
-      {/* Botões */}
       <div className="flex gap-3 justify-end">
         <button
           type="button"
@@ -647,6 +724,7 @@ export default function FormularioImovel({ imovel, modo }: FormularioImovelProps
         >
           Cancelar
         </button>
+
         <button type="submit" disabled={carregando} className="btn-primary">
           {carregando ? (
             <>

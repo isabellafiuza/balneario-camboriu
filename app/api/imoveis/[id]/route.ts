@@ -82,6 +82,8 @@ export async function PUT(
       data: {
         ...dados,
         metragemTerreno: dados.metragemTerreno ?? undefined,
+        condominio: dados.condominio ?? undefined,
+        iptu: dados.iptu ?? undefined,
       },
       include: { imagens: true },
     })

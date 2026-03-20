@@ -133,6 +133,8 @@ export async function POST(request: NextRequest) {
         ...dados,
         slug,
         metragemTerreno: dados.metragemTerreno ?? null,
+        condominio: dados.condominio ?? null,
+        iptu: dados.iptu ?? null,
       },
       include: { imagens: true },
     })
