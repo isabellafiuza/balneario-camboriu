@@ -1,5 +1,4 @@
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
@@ -11,8 +10,6 @@ export const metadata: Metadata = {
   title: 'Início',
   description: 'Encontre o imóvel dos seus sonhos. Apartamentos, casas, terrenos e muito mais.',
 }
-
-export const revalidate = 60
 
 async function getImoveisDestaque() {
   return prisma.imovel.findMany({

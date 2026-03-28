@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { Building2, PlusCircle, Eye, TrendingUp, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { formatarPreco } from '@/lib/utils'
 
-export const revalidate = 0
-
 async function getEstatisticas() {
   const [
     total,

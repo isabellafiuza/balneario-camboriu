@@ -6,8 +6,6 @@ import { formatarPreco, traduzirTipo, traduzirStatus, corStatus } from '@/lib/ut
 import ExcluirImovelBtn from '@/components/admin/ExcluirImovelBtn'
 import AlterarStatusBtn from '@/components/admin/AlterarStatusBtn'
 
-export const revalidate = 0
-
 async function getImoveis() {
   return prisma.imovel.findMany({
     orderBy: { createdAt: 'desc' },
