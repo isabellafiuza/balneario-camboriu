@@ -1,4 +1,6 @@
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
@@ -57,14 +59,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export async function generateStaticParams() {
-  const imoveis = await prisma.imovel.findMany({
-    select: { slug: true },
-    where: { status: 'DISPONIVEL' },
-  })
-  return imoveis.map((i) => ({ slug: i.slug }))
-}
-
 export default async function ImovelPage({ params }: Props) {
   const imovel = await prisma.imovel.findUnique({
     where: { slug: params.slug },
@@ -78,7 +72,6 @@ export default async function ImovelPage({ params }: Props) {
   const urlWhatsApp = gerarUrlWhatsApp(imovel.titulo, imovel.slug)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-  // Schema.org para SEO
   const schemaOrg = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateListing',
@@ -101,7 +94,6 @@ export default async function ImovelPage({ params }: Props) {
 
   return (
     <>
-      {/* Schema.org */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
@@ -109,7 +101,6 @@ export default async function ImovelPage({ params }: Props) {
 
       <div className="py-8">
         <div className="container-page">
-          {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
             <Link href="/" className="flex items-center gap-1 hover:text-primary-700">
               <Home className="w-4 h-4" />
@@ -124,12 +115,9 @@ export default async function ImovelPage({ params }: Props) {
           </nav>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Coluna principal */}
             <div className="lg:col-span-2">
-              {/* Galeria */}
               <GaleriaImagens imagens={imovel.imagens} titulo={imovel.titulo} />
 
-              {/* Informações principais */}
               <div className="mt-6">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className={`badge ${corStatus(imovel.status)}`}>
@@ -160,7 +148,6 @@ export default async function ImovelPage({ params }: Props) {
                   </span>
                 </div>
 
-                {/* Características */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl mb-6">
                   {imovel.quartos > 0 && (
                     <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg">
@@ -176,6 +163,7 @@ export default async function ImovelPage({ params }: Props) {
                       )}
                     </div>
                   )}
+
                   {imovel.banheiros > 0 && (
                     <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg">
                       <Bath className="w-6 h-6 text-primary-600 mb-1" />
@@ -185,6 +173,7 @@ export default async function ImovelPage({ params }: Props) {
                       </span>
                     </div>
                   )}
+
                   {imovel.vagas > 0 && (
                     <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg">
                       <Car className="w-6 h-6 text-primary-600 mb-1" />
@@ -194,6 +183,7 @@ export default async function ImovelPage({ params }: Props) {
                       </span>
                     </div>
                   )}
+
                   <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg">
                     <Maximize className="w-6 h-6 text-primary-600 mb-1" />
                     <span className="text-xl font-bold text-gray-900">{imovel.metragem}</span>
@@ -206,7 +196,6 @@ export default async function ImovelPage({ params }: Props) {
                   </div>
                 </div>
 
-                {/* Descrição */}
                 <div className="mb-6">
                   <h2 className="text-xl font-semibold text-gray-900 mb-3">Descrição</h2>
                   <div className="text-gray-700 leading-relaxed whitespace-pre-line">
@@ -214,7 +203,6 @@ export default async function ImovelPage({ params }: Props) {
                   </div>
                 </div>
 
-                {/* Comodidades */}
                 {imovel.comodidades.length > 0 && (
                   <div className="mb-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-3">Comodidades</h2>
@@ -231,10 +219,8 @@ export default async function ImovelPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Sidebar */}
             <div className="lg:col-span-1">
               <div className="card p-6 sticky top-24">
-                {/* Preço */}
                 <div className="mb-6">
                   <p className="text-sm text-gray-500 mb-1">
                     {imovel.tipoTransacao === 'ALUGUEL' ? 'Aluguel mensal' : 'Valor de venda'}
@@ -244,7 +230,6 @@ export default async function ImovelPage({ params }: Props) {
                   </p>
                 </div>
 
-                {/* Resumo */}
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Tipo</span>
@@ -254,40 +239,42 @@ export default async function ImovelPage({ params }: Props) {
                     <span>Área</span>
                     <span className="font-medium text-gray-900">{formatarMetragem(imovel.metragem)}</span>
                   </div>
-{/* Custos adicionais */}
-{((imovel.condominio ?? 0) > 0 || (imovel.iptu ?? 0) > 0) && (
-  <div className="mt-4 pt-4 border-t border-gray-200">
-    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-      Custos adicionais
-    </p>
 
-    <div className="space-y-1 text-sm">
-      {(imovel.condominio ?? 0) > 0 && (
-        <div className="flex justify-between">
-          <span className="text-gray-500">Condomínio</span>
-          <span className="font-medium text-gray-700">
-            {(imovel.condominio ?? 0).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </span>
-        </div>
-      )}
+                  {((imovel.condominio ?? 0) > 0 || (imovel.iptu ?? 0) > 0) && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                        Custos adicionais
+                      </p>
 
-      {(imovel.iptu ?? 0) > 0 && (
-        <div className="flex justify-between">
-          <span className="text-gray-500">IPTU</span>
-          <span className="font-medium text-gray-700">
-            {(imovel.iptu ?? 0).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </span>
-        </div>
-      )}
-    </div>
-  </div>
-)}                  {imovel.quartos > 0 && (
+                      <div className="space-y-1 text-sm">
+                        {(imovel.condominio ?? 0) > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Condomínio</span>
+                            <span className="font-medium text-gray-700">
+                              {(imovel.condominio ?? 0).toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              })}
+                            </span>
+                          </div>
+                        )}
+
+                        {(imovel.iptu ?? 0) > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">IPTU</span>
+                            <span className="font-medium text-gray-700">
+                              {(imovel.iptu ?? 0).toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {imovel.quartos > 0 && (
                     <div className="flex justify-between text-gray-600">
                       <span>Quartos</span>
                       <span className="font-medium text-gray-900">{imovel.quartos}</span>
@@ -313,7 +300,6 @@ export default async function ImovelPage({ params }: Props) {
                   </div>
                 </div>
 
-                {/* Botão WhatsApp */}
                 <a
                   href={urlWhatsApp}
                   target="_blank"
@@ -328,7 +314,6 @@ export default async function ImovelPage({ params }: Props) {
                   Clique para falar diretamente com a corretora via WhatsApp
                 </p>
 
-                {/* Código do imóvel */}
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="text-xs text-gray-400 text-center">
                     Código: {imovel.id.slice(-8).toUpperCase()}
@@ -338,7 +323,6 @@ export default async function ImovelPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Voltar */}
           <div className="mt-8">
             <Link href="/imoveis" className="btn-secondary inline-flex">
               <ChevronLeft className="w-4 h-4" />
