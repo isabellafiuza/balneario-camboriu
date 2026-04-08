@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "npm run db:seed && next start",
+    "start": "next start",
     "lint": "next lint",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
